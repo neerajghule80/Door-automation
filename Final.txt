@@ -1,0 +1,142 @@
+http://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.cdt.doc.user%2Ftasks%2Fcdt_t_new_cpp.htm
+ECLIPSE HELP
+
+/**************************************************************************************************************
+
+#include "Keypad.h"
+#include "Wire.h" 
+#include "LiquidCrystal.h"
+#define BACKLIGHT_PIN 9
+#define Password_Lenght 7 // Give enough room for six chars + NULL char
+/*************************************************************************************************/
+//code for PIR sensor 
+int ledPin = 45;                // choose the pin for the LED
+
+
+int inputPin = 2;               // choose the input pin (for PIR sensor)
+int pirState = LOW;             // we start, assuming no motion detected
+int val = 0;                    // variable for reading the pin status
+
+ /***********************************************************************************************/
+
+ //code for LED and Keypad
+
+int motorpin1 = 3;                  //define digital output pin no.
+
+int motorpin2 = 4;                  //define digital output pin no.
+
+LiquidCrystal lcd(A0,A1,A2,A3,A4,A5);
+char Data[Password_Lenght]; // 6 is the number of chars it can hold + the null char = 7
+char Master[Password_Lenght] = "234566"; 
+byte data_count = 0, master_count = 0;
+bool Pass_is_good;
+char customKey;
+   void clearData()
+{
+  while(data_count !=0)
+  {   // This can be used for any array size, 
+    Data[data_count--] = 0; //clear array for new data
+  }
+  return;
+
+  }
+const byte ROWS = 4;
+const byte COLS = 4;
+char keys[ROWS][COLS] = {
+  {'*','7','4','1'},
+
+   
+  {'0','8','5','2'},
+
+   
+  {'#','9','6','3'},
+
+   
+  {'D','C','B','A'}
+};
+
+// Connect keypad ROW0, ROW1, ROW2 and ROW3 to
+//  Arduino pins.
+
+  byte rowPins[ROWS] = { 5, 4, 3, 2 };
+
+  // Connect keypad COL0, COL1, COL2 and COL3 to
+//  Arduino pins.
+
+  byte colPins[COLS] = { 6, 7, 8, 9 }; 
+
+Keypad customKeypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS); //initialize an instance of class NewKeypad 
+/*********************************************************************************************************************************************************/
+//Code for PIR sensor
+void setup() 
+{
+  pinMode(47,OUTPUT);
+  pinMode(ledPin, OUTPUT);      // declare LED as output
+  pinMode(inputPin, INPUT);     // declare sensor as input
+  Serial.begin(9600);
+/**********************************************************************************************************************************************************/
+//Code for LCD and Keypad
+  lcd.begin(16,2);
+  pinMode(motorpin1,OUTPUT);        //set pin 3 as output
+  pinMode(12, OUTPUT);
+  pinMode(motorpin2,OUTPUT);        // set pin 4 as output
+  digitalWrite(12, HIGH);
+
+}
+ 
+void loop()
+{
+  val = digitalRead(inputPin);  // read input value
+  if (val == HIGH) 
+  {            // check if the input is HIGH
+    digitalWrite(ledPin, HIGH);  // turn LED ON
+    digitalWrite(47,LOW);
+    if (pirState == LOW) 
+    {                             // we have just turned on
+      pirState = HIGH;
+    }
+    //***********************************************************************************************************************************************
+    //Code for LCD and Keypad
+    digitalWrite(motorpin1,LOW);
+
+  digitalWrite(motorpin2,HIGH);
+
+  lcd.setCursor(0,0);
+  lcd.print("Enter Password");
+
+  customKey = customKeypad.getKey();
+  if (customKey) // makes sure a key is actually pressed, equal to (customKey != NO_KEY)
+  {
+    Data[data_count] = customKey; // store char into data array
+    lcd.setCursor(data_count,1); // move cursor to show each new char
+    lcd.print(Data[data_count]); // print char at said cursor
+    data_count++; // increment data array by 1 to store new char, also keep track of the number of chars entered
+  }
+
+  if(data_count == Password_Lenght-1) // if the array index is equal to the number of expected chars, compare data to master
+  {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    //lcd.print("Password is ");
+
+    if(!strcmp(Data, Master)) // equal to (strcmp(Data, Master) == 0)
+      lcd.print("Corect Password");
+    else
+      lcd.print("Incorrect ");
+
+    delay(10000);// added 1 second delay to make sure the password is completely shown on screen before it gets cleared.
+    lcd.clear();
+    clearData();   
+  }
+}
+
+  else 
+  {
+    digitalWrite(ledPin, LOW); // turn LED OFF
+    if (pirState == HIGH)
+    {
+      // we have just turned of
+      pirState = LOW;
+    }
+  }
+}
